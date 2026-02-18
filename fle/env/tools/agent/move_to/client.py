@@ -70,15 +70,14 @@ class MoveTo(Tool):
                     self.player_index, path_handle, NONE, NONE
                 )
 
-            # Sleep for the appropriate real-world time based on elapsed ticks
+            # Advance game ticks via RCON commands.
+            # Factorio 2.0 headless servers don't advance ticks without
+            # connected players, so we force advancement with no-op commands.
             ticks_after = self.game_state.instance.get_elapsed_ticks()
             ticks_added = ticks_after - ticks_before
             if ticks_added > 0:
-                game_speed = self.game_state.instance.get_speed()
-                real_world_sleep = (
-                    ticks_added / 60 / game_speed if game_speed > 0 else 0
-                )
-                sleep(real_world_sleep)
+                for _ in range(ticks_added):
+                    self.connection.rcon_client.send_command("/sc")
 
             if isinstance(response, int) and response == 0:
                 raise Exception("Could not move.")

@@ -5,11 +5,17 @@ from fle.env.game_types import Technology
 
 @pytest.fixture()
 def game(configure_game):
-    return configure_game(
+    g = configure_game(
         inventory={"assembling-machine-1": 1},
         merge=True,
         all_technologies_researched=False,
     )
+    # Pre-research automation prerequisites for Factorio 2.0 tech tree
+    for tech in ["electronics", "steam-power", "automation-science-pack"]:
+        g.instance.rcon_client.send_command(
+            f'/c game.forces["player"].technologies["{tech}"].researched = true'
+        )
+    return g
 
 
 def test_get_research_progress_automation(game):

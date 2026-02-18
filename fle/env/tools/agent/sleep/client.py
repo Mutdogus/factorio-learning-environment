@@ -19,12 +19,11 @@ class Sleep(Tool):
         # Update elapsed ticks on server
         _, _ = self.execute(seconds)
 
-        # Sleep for the appropriate real-world time based on elapsed ticks
-        ticks_after = self.game_state.instance.get_elapsed_ticks()
-        ticks_added = ticks_after - ticks_before
-        if ticks_added > 0:
-            game_speed = self.game_state.instance.get_speed()
-            real_world_sleep = ticks_added / 60 / game_speed if game_speed > 0 else 0
-            sleep(real_world_sleep)
+        # Advance game ticks by sending rapid RCON commands.
+        # Factorio 2.0 headless servers don't advance ticks without connected
+        # players, so each RCON command forces exactly 1 tick to process.
+        ticks_needed = seconds * 60
+        for _ in range(ticks_needed):
+            self.connection.rcon_client.send_command("/sc")
 
         return True
