@@ -22,8 +22,13 @@ local function get_raw_resources()
         end
       end
     end
-    if entity_prototype.fluid then
-      raw_resources[entity_prototype.fluid.name] = true
+    -- In 2.0, fluid resources are found via mineable_properties.products with type="fluid"
+    if entity_prototype.mineable_properties and entity_prototype.mineable_properties.products then
+      for _, product in pairs(entity_prototype.mineable_properties.products) do
+        if product.type == "fluid" then
+          raw_resources[product.name] = true
+        end
+      end
     end
   end
   return raw_resources
@@ -31,7 +36,7 @@ end
 
 local function get_product_list()
   local product_list = {}
-  local recipes = game.recipe_prototypes
+  local recipes = prototypes.recipe
 
   for recipe_name, recipe_prototype in pairs (recipes) do
     if recipe_prototype.allow_decomposition then
@@ -138,12 +143,12 @@ local deduce_nil_prices = function(price_list, param)
       nil_prices[name] = {}
     end
   end
-  for name, item in pairs (game.fluid_prototypes) do
+  for name, item in pairs (prototypes.fluid) do
     if not price_list[name] then
       nil_prices[name] = {}
     end
   end
-  local recipes = game.recipe_prototypes
+  local recipes = prototypes.recipe
   for name, recipe in pairs (recipes) do
     for k, ingredient in pairs (recipe.ingredients) do
       if nil_prices[ingredient.name] then
@@ -284,7 +289,7 @@ production_score.generate_price_list = function(param)
     local current_loop = {}
     get_price_recursive(name, current_loop)
   end
-  local fluids = game.fluid_prototypes
+  local fluids = prototypes.fluid
   for name, fluid in pairs (fluids) do
     local current_loop = {}
     get_price_recursive(name, current_loop)

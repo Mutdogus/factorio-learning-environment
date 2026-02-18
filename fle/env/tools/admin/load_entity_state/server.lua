@@ -218,7 +218,7 @@ storage.actions.load_entity_state = function(player, stored_json_data)
                entity.get_recipe then  -- Double check entity supports recipes
 
                 local recipe_name = unquote_string(state.recipe.name)
-                if game.recipe_prototypes[recipe_name] then
+                if prototypes.recipe[recipe_name] then
                     -- game.print("Setting recipe " .. recipe_name .. " on " .. entity.name)
                     pcall(function()
                         entity.set_recipe(recipe_name)

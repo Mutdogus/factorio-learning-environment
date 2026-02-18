@@ -24,7 +24,7 @@ storage.actions.regenerate_resources2 = function(player_index)
       end
     end
     local non_infinites = {}
-    for resource, prototype in pairs(game.get_filtered_entity_prototypes{{filter="type", type="resource"}}) do
+    for resource, prototype in pairs(prototypes.get_entity_filtered{{filter="type", type="resource"}}) do
       if not prototype.infinite_resource then
         table.insert(non_infinites, resource)
       end

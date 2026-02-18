@@ -108,7 +108,7 @@ storage.actions.insert_item = function(player_index, insert_item, count, x, y, t
                 end
             end
             -- Check if it's a valid ingredient for any furnace recipe
-            for _, recipe in pairs(game.recipe_prototypes) do
+            for _, recipe in pairs(prototypes.recipe) do
                 if recipe.category == "smelting" then
                     for _, ingredient in pairs(recipe.ingredients) do
                         if ingredient.name == item_name then
@@ -123,7 +123,7 @@ storage.actions.insert_item = function(player_index, insert_item, count, x, y, t
             --    return true
             --end
             ---- Check if it's a valid ingredient for any furnace recipe
-            --for _, recipe in pairs(game.recipe_prototypes) do
+            --for _, recipe in pairs(prototypes.recipe) do
             --    if recipe.category == "smelting" then
             --        for _, ingredient in pairs(recipe.ingredients) do
             --            if ingredient.name == item_name then
