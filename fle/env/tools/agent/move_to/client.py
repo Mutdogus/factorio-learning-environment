@@ -76,8 +76,12 @@ class MoveTo(Tool):
             ticks_after = self.game_state.instance.get_elapsed_ticks()
             ticks_added = ticks_after - ticks_before
             if ticks_added > 0:
-                for _ in range(ticks_added):
-                    self.connection.rcon_client.send_command("/sc")
+                BATCH_SIZE = 30
+                for i in range(0, ticks_added, BATCH_SIZE):
+                    batch = min(BATCH_SIZE, ticks_added - i)
+                    for _ in range(batch):
+                        self.connection.rcon_client.send_command("/sc")
+                    sleep(0.005)
 
             if isinstance(response, int) and response == 0:
                 raise Exception("Could not move.")

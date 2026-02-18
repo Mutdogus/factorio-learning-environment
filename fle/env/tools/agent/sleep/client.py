@@ -19,11 +19,17 @@ class Sleep(Tool):
         # Update elapsed ticks on server
         _, _ = self.execute(seconds)
 
-        # Advance game ticks by sending rapid RCON commands.
+        # Advance game ticks via RCON commands.
         # Factorio 2.0 headless servers don't advance ticks without connected
         # players, so each RCON command forces exactly 1 tick to process.
+        # We send commands in small batches with brief pauses to avoid
+        # overwhelming the RCON connection.
         ticks_needed = seconds * 60
-        for _ in range(ticks_needed):
-            self.connection.rcon_client.send_command("/sc")
+        BATCH_SIZE = 30
+        for i in range(0, ticks_needed, BATCH_SIZE):
+            batch = min(BATCH_SIZE, ticks_needed - i)
+            for _ in range(batch):
+                self.connection.rcon_client.send_command("/sc")
+            sleep(0.005)  # Brief pause between batches
 
         return True
