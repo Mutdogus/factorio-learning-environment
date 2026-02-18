@@ -90,7 +90,7 @@ storage.actions.craft_item = function(player_index, entity, count)
     end
 
     local function update_production_stats(force, recipe, crafts_count)
-        local stats = force.get_item_production_statistics()
+        local stats = force.get_item_production_statistics(game.surfaces[1])
         local craft_stats = {crafted_count = crafts_count, inputs = {}, outputs = {}}
         for _, ingredient in pairs(recipe.ingredients) do
             craft_stats.inputs[ingredient.name] = ingredient.amount * crafts_count

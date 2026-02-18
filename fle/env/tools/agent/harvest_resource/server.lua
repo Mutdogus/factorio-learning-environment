@@ -6,7 +6,7 @@ local function calculate_mining_ticks(entity)
 end
 
 local function update_production_stats(force, entity_name, amount)
-        local stats = force.get_item_production_statistics()
+        local stats = force.get_item_production_statistics(game.surfaces[1])
         stats.on_flow(entity_name, amount)
         if storage.harvested_items[entity_name] then
             storage.harvested_items[entity_name] = storage.harvested_items[entity_name] + amount

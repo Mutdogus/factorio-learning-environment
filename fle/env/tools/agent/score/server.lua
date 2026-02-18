@@ -312,13 +312,13 @@ production_score.get_production_scores = function(_price_list)
   local scores = {}
   for k, force in pairs (game.forces) do
     local score = 0
-    for name, value in pairs (get_total_production_counts(force.get_item_production_statistics())) do
+    for name, value in pairs (get_total_production_counts(force.get_item_production_statistics(game.surfaces[1]))) do
       local price = price_list[name]
       if price then
         score = score + (price * value)
       end
     end
-    for name, value in pairs (get_total_production_counts(force.get_fluid_production_statistics())) do
+    for name, value in pairs (get_total_production_counts(force.get_fluid_production_statistics(game.surfaces[1]))) do
       local price = price_list[name]
       if price then
         score = score + (price * value)

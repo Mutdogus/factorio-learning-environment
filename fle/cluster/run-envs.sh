@@ -106,6 +106,12 @@ version: '3'
 services:
 EOF
     
+    # Map gen settings only needed for open_world (new map generation)
+    MAP_GEN_ARGS=""
+    if [ "$SCENARIO" = "open_world" ]; then
+        MAP_GEN_ARGS=" --map-gen-settings /opt/factorio/config/map-gen-settings.json --map-settings /opt/factorio/config/map-settings.json --map-gen-seed 44340"
+    fi
+
     # Add the specified number of factorio services
     for i in $(seq 0 $(($NUM_INSTANCES - 1))); do
         UDP_PORT=$((34197 + i))
@@ -116,12 +122,11 @@ EOF
     image: factoriotools/factorio:2.0
     platform: \${DOCKER_PLATFORM:-linux/amd64}
     command: ${EMULATOR} /opt/factorio/bin/x64/factorio ${COMMAND}
-      --port 34197 --server-settings /opt/factorio/config/server-settings.json --map-gen-settings
-      /opt/factorio/config/map-gen-settings.json --map-settings /opt/factorio/config/map-settings.json
+      --port 34197 --server-settings /opt/factorio/config/server-settings.json
       --server-banlist /opt/factorio/config/server-banlist.json --rcon-port 27015
       --rcon-password "factorio" --server-whitelist /opt/factorio/config/server-whitelist.json
       --use-server-whitelist --server-adminlist /opt/factorio/config/server-adminlist.json
-      --mod-directory /opt/factorio/mods --map-gen-seed 44340
+      --mod-directory /opt/factorio/mods${MAP_GEN_ARGS}
     deploy:
       resources:
         limits:

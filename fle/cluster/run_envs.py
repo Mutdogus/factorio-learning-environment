@@ -107,14 +107,15 @@ class ComposeGenerator:
             f"--rcon-port {self.internal_rcon_port}",
             f"--rcon-password {self.rcon_password}",
             "--server-settings /opt/factorio/config/server-settings.json",
-            "--map-gen-settings /opt/factorio/config/map-gen-settings.json",
-            "--map-settings /opt/factorio/config/map-settings.json",
             "--server-adminlist /opt/factorio/config/server-adminlist.json",
             "--server-banlist /opt/factorio/config/server-banlist.json",
             "--server-whitelist /opt/factorio/config/server-whitelist.json",
             "--use-server-whitelist",
         ]
         if self.scenario == "open_world":
+            # Map gen/settings only needed for open_world (new map generation)
+            args.append("--map-gen-settings /opt/factorio/config/map-gen-settings.json")
+            args.append("--map-settings /opt/factorio/config/map-settings.json")
             args.append(f"--map-gen-seed {self.map_gen_seed}")
         if self.attach_mod:
             args.append("--mod-directory /opt/factorio/mods")

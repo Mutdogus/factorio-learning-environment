@@ -6,10 +6,10 @@ storage.actions.production_stats = function(player)
     -- Get total production counts for force
     local force = game.forces.player
 
-    local item_input_counts = force.get_item_production_statistics().input_counts
-    local item_production_counts = force.get_item_production_statistics().output_counts
-    local fluid_input_counts = force.get_fluid_production_statistics().input_counts
-    local fluid_production_counts = force.get_fluid_production_statistics().output_counts
+    local item_input_counts = force.get_item_production_statistics(game.surfaces[1]).input_counts
+    local item_production_counts = force.get_item_production_statistics(game.surfaces[1]).output_counts
+    local fluid_input_counts = force.get_fluid_production_statistics(game.surfaces[1]).input_counts
+    local fluid_production_counts = force.get_fluid_production_statistics(game.surfaces[1]).output_counts
 
     for name, count in pairs(item_input_counts) do
         consumption_diff[name] = count
@@ -37,10 +37,10 @@ end
 storage.actions.reset_production_stats = function(player)
     local force = game.forces.player
     -- Reset item statistics
-    force.get_item_production_statistics().clear()
+    force.get_item_production_statistics(game.surfaces[1]).clear()
 
     -- Reset fluid statistics
-    force.get_fluid_production_statistics().clear()
+    force.get_fluid_production_statistics(game.surfaces[1]).clear()
 
     storage.harvested_items = {}
     storage.crafted_items = {}
