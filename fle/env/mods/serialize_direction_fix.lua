@@ -8,7 +8,7 @@
 local original_serialize_entity = storage.utils.serialize_entity
 
 -- Inverse direction mapping for entities with non-standard direction semantics.
--- Normal entities: raw direction maps directly (N→N, E→E, S→S, W→W).
+-- Normal entities: raw direction maps directly (N->N, E->E, S->S, W->W).
 -- Inserters and offshore pumps: direction is reversed.
 local function inverse_direction(entity_name, raw_dir)
     local prototype = prototypes.entity[entity_name]
@@ -35,10 +35,19 @@ end
 storage.utils.serialize_entity = function(entity)
     local result = original_serialize_entity(entity)
 
-    -- Fix the direction: convert from raw Factorio 2.0 values to Python enum
+    -- Fix the main entity direction: convert from raw Factorio 2.0 values to Python enum
     if entity and entity.valid and entity.direction then
         local inversed = inverse_direction(entity.name, entity.direction)
         result.direction = inversed / 2
+    end
+
+    -- Fix neighbour directions: convert from raw Factorio 2.0 values to Python enum
+    if result.neighbours then
+        for _, neighbour in pairs(result.neighbours) do
+            if neighbour.direction then
+                neighbour.direction = neighbour.direction / 2
+            end
+        end
     end
 
     return result
