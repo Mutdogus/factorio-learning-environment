@@ -636,12 +636,14 @@ storage.utils.serialize_entity = function(entity)
     local direction = entity.direction
 
     if direction ~= nil then
-        -- In Factorio 2.0, entity.direction values are 0,4,8,12 (doubled from 1.x).
-        -- get_entity_direction expects 0-3 input, and returns defines.direction values (0,4,8,12 in 2.0).
-        -- Python Direction enum uses 0,2,4,6 (matching 1.x values).
-        -- So: entity.direction/4 → 0-3 input, get_entity_direction output/2 → Python values.
-        local internal_dir = entity.direction / 4
-        direction = get_entity_direction(entity.name, internal_dir) / 2
+        -- In Factorio 2.0, entity.direction values are 0,4,8,12 (N,E,S,W).
+        -- Python Direction enum uses 0,2,4,6 (UP,RIGHT,DOWN,LEFT).
+        -- For normal entities: raw_direction / 2 = python_direction.
+        -- For special entities (inserters, offshore pumps): need inverse mapping first,
+        -- because their Factorio direction differs from their logical FLE direction.
+        -- get_inverse_entity_direction handles this using defines.direction comparisons
+        -- which auto-adjust for Factorio 2.0 values.
+        direction = get_inverse_entity_direction(entity.name, entity.direction) / 2
     else
         direction = 0
     end
