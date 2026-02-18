@@ -42,7 +42,14 @@ class MoveTo(Tool):
             allow_paths_through_own_entities=True,
             resolution=-1,
         )
-        sleep(0.05)  # Let the pathing complete in the game.
+        # Poll for path availability (async pathfinding may take multiple ticks)
+        for _ in range(20):
+            sleep(0.05)
+            path_status = self.connection.rcon_client.send_command(
+                f"/silent-command rcon.print(type(storage.paths[{path_handle}]))"
+            )
+            if path_status and path_status.strip() == "table":
+                break
 
         # Track elapsed ticks for fast forward
         ticks_before = self.game_state.instance.get_elapsed_ticks()
