@@ -1,4 +1,14 @@
-global.utils.remove_enemies = function ()
+-- Factorio 2.0 compat: get_contents() now returns array of {name, count, quality}
+-- This wrapper converts back to the old {["item-name"] = count} format
+storage.utils.get_contents_compat = function(inventory_or_line)
+    local result = {}
+    for _, item in pairs(inventory_or_line.get_contents()) do
+        result[item.name] = (result[item.name] or 0) + item.count
+    end
+    return result
+end
+
+storage.utils.remove_enemies = function ()
     game.forces["enemy"].kill_all_units()  -- Removes all biters
     game.map_settings.enemy_expansion.enabled = false  -- Stops biters from expanding
     game.map_settings.enemy_evolution.enabled = false  -- Stops biters from evolving
@@ -10,7 +20,7 @@ end
 
 local directions = {'north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest'}
 
-global.utils.get_direction = function(from_position, to_position)
+storage.utils.get_direction = function(from_position, to_position)
     local dx = to_position.x - from_position.x
     local dy = to_position.y - from_position.y
     local adx = math.abs(dx)
@@ -19,20 +29,20 @@ global.utils.get_direction = function(from_position, to_position)
 
     if adx > ady then
         if dx > 0 then
-            return (ady / adx > diagonal_threshold) and (dy > 0 and 3 or 1) or 2
+            return (ady / adx > diagonal_threshold) and (dy > 0 and defines.direction.southeast or defines.direction.northeast) or defines.direction.east
         else
-            return (ady / adx > diagonal_threshold) and (dy > 0 and 5 or 7) or 6
+            return (ady / adx > diagonal_threshold) and (dy > 0 and defines.direction.southwest or defines.direction.northwest) or defines.direction.west
         end
     else
         if dy > 0 then
-            return (adx / ady > diagonal_threshold) and (dx > 0 and 3 or 5) or 4
+            return (adx / ady > diagonal_threshold) and (dx > 0 and defines.direction.southeast or defines.direction.southwest) or defines.direction.south
         else
-            return (adx / ady > diagonal_threshold) and (dx > 0 and 1 or 7) or 0
+            return (adx / ady > diagonal_threshold) and (dx > 0 and defines.direction.northeast or defines.direction.northwest) or defines.direction.north
         end
     end
 end
 
-global.utils.get_direction_with_diagonals = function(from_pos, to_pos)
+storage.utils.get_direction_with_diagonals = function(from_pos, to_pos)
     local dx = to_pos.x - from_pos.x
     local dy = to_pos.y - from_pos.y
 
@@ -57,7 +67,7 @@ global.utils.get_direction_with_diagonals = function(from_pos, to_pos)
 end
 
 
-global.utils.get_closest_entity = function(player, position)
+storage.utils.get_closest_entity = function(player, position)
     local closest_distance = math.huge
     local closest_entity = nil
     local entities = player.surface.find_entities_filtered{
@@ -79,7 +89,7 @@ global.utils.get_closest_entity = function(player, position)
     return closest_entity
 end
 
-global.utils.calculate_movement_ticks = function(player, from_pos, to_pos)
+storage.utils.calculate_movement_ticks = function(player, from_pos, to_pos)
     -- Calculate distance between points
     local dx = to_pos.x - from_pos.x
     local dy = to_pos.y - from_pos.y
@@ -99,7 +109,7 @@ end
 -- Wrapper around LuaSurface.can_place_entity that replicates all checks LuaPlayer.can_place_entity performs.
 -- This allows our code to validate placement without relying on an actual LuaPlayer instance.
 -- extra_params can be provided by callers to pass additional flags (e.g. fast_replace) if needed.
-global.utils.can_place_entity = function(player, entity_name, position, direction, extra_params)
+storage.utils.can_place_entity = function(player, entity_name, position, direction, extra_params)
     local params = extra_params or {}
     params.name = entity_name
     params.position = position
@@ -110,15 +120,15 @@ global.utils.can_place_entity = function(player, entity_name, position, directio
     return player.surface.can_place_entity(params)
 end
 
-global.utils.avoid_entity = function(player_index, entity, position, direction)
-    local player = global.agent_characters[player_index]
+storage.utils.avoid_entity = function(player_index, entity, position, direction)
+    local player = storage.agent_characters[player_index]
     local player_position = player.position
     for i=0, 10 do
         local can_place = player.surface.can_place_entity{
             name = entity,
             force = "player",
             position = position,
-            direction = global.utils.get_entity_direction(entity, direction)
+            direction = storage.utils.get_entity_direction(entity, direction)
         }
         if can_place then
             return true
@@ -129,11 +139,11 @@ global.utils.avoid_entity = function(player_index, entity, position, direction)
     return false
 end
 
-global.crafting_queue = {}
+storage.crafting_queue = {}
 
 script.on_event(defines.events.on_tick, function(event)
   -- Iterate over the crafting queue and update the remaining ticks
-  for i, task in ipairs(global.crafting_queue) do
+  for i, task in ipairs(storage.crafting_queue) do
     task.remaining_ticks = task.remaining_ticks - 1
 
     -- If the crafting is finished, consume the ingredients, insert the crafted entity, and remove the task from the queue
@@ -142,7 +152,7 @@ script.on_event(defines.events.on_tick, function(event)
         task.player.remove_item({name = ingredient.name, count = ingredient.amount * task.count})
       end
       task.player.insert({name = task.entity_name, count = task.count})
-      table.remove(global.crafting_queue, i)
+      table.remove(storage.crafting_queue, i)
     end
   end
 end)
@@ -160,7 +170,7 @@ function dump(o)
    end
 end
 
-function global.utils.inspect(player, radius, position)
+function storage.utils.inspect(player, radius, position)
     local surface = player.surface
     local bounding_box = {
         left_top = {x = position.x - radius, y = position.y - radius},
@@ -185,11 +195,11 @@ function global.utils.inspect(player, radius, position)
 
             -- Get entity contents if it has an inventory
             if entity.get_inventory(defines.inventory.chest) then
-                local inventory = entity.get_inventory(defines.inventory.chest).get_contents()
+                local inventory = storage.utils.get_contents_compat(entity.get_inventory(defines.inventory.chest))
                 data.contents = inventory
             end
 
-            data.warnings = global.utils.get_issues(entity)
+            data.warnings = storage.utils.get_issues(entity)
 
             -- Get entity orientation if it has an orientation attribute
             if entity.type == "train-stop" or entity.type == "car" or entity.type == "locomotive" then

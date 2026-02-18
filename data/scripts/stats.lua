@@ -1,1 +1,1 @@
-rcon.print(table.tostring(game.forces['player'].item_production_statistics.input_counts))
+rcon.print(table.tostring(game.forces['player'].get_item_production_statistics().input_counts))

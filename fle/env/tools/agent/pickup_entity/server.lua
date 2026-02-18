@@ -1,5 +1,5 @@
-global.actions.pickup_entity = function(player_index, x, y, entity)
-    local player = global.agent_characters[player_index]
+storage.actions.pickup_entity = function(player_index, x, y, entity)
+    local player = storage.agent_characters[player_index]
     local position = {x=x, y=y}
     local surface = player.surface
     local success = false
@@ -39,7 +39,7 @@ global.actions.pickup_entity = function(player_index, x, y, entity)
 
                 -- Add chest contents if applicable
                 if ent.get_inventory(defines.inventory.chest) then
-                    for name, count in pairs(ent.get_inventory(defines.inventory.chest).get_contents()) do
+                    for name, count in pairs(storage.utils.get_contents_compat(ent.get_inventory(defines.inventory.chest))) do
                         table.insert(items_to_insert, {name=name, count=count})
                     end
                 end
@@ -48,14 +48,14 @@ global.actions.pickup_entity = function(player_index, x, y, entity)
                 if ent.type == "transport-belt" then
                     -- Check line 1
                     local line1 = ent.get_transport_line(1)
-                    local contents1 = line1.get_contents()
+                    local contents1 = storage.utils.get_contents_compat(line1)
                     for name, count in pairs(contents1) do
                         table.insert(items_to_insert, {name=name, count=count})
                     end
 
                     -- Check line 2
                     local line2 = ent.get_transport_line(2)
-                    local contents2 = line2.get_contents()
+                    local contents2 = storage.utils.get_contents_compat(line2)
                     for name, count in pairs(contents2) do
                         table.insert(items_to_insert, {name=name, count=count})
                     end

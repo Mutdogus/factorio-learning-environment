@@ -318,7 +318,7 @@ local function serialize_neighbours(entity)
     local neighbours = {}
 
     -- Get entity's prototype collision box
-    local prototype = game.entity_prototypes[entity.name]
+    local prototype = prototypes.entity[entity.name]
     local collision_box = prototype.collision_box
 
     -- Create a slightly larger search box
@@ -381,7 +381,7 @@ local function get_entity_direction(entity, direction)
         return defines.direction.north
     end
 
-    local prototype = game.entity_prototypes[entity]
+    local prototype = prototypes.entity[entity]
     -- if prototype is nil (e.g because the entity is a ghost or player character) then return the direction as is
     if prototype == nil then
         return direction
@@ -512,7 +512,7 @@ local function get_entity_direction(entity, direction)
 end
 
 local function get_inverse_entity_direction(entity, factorio_direction)
-    local prototype = game.entity_prototypes[entity]
+    local prototype = prototypes.entity[entity]
 
     if not factorio_direction then
         return 0  -- Assuming 0 is the default direction in your system
@@ -568,7 +568,7 @@ local function is_valid_connection_point(surface, position)
     return not invalid_tiles[tile.name]
 end
 
-global.utils.entity_status_names = function(entity_status)
+storage.utils.entity_status_names = function(entity_status)
     local s = entity_status
     if not s then return '"normal"' end
 
@@ -584,9 +584,9 @@ global.utils.entity_status_names = function(entity_status)
     return '"normal"'
 end
 
-global.utils.get_entity_direction = get_entity_direction
+storage.utils.get_entity_direction = get_entity_direction
 
-global.utils.serialize_recipe = function(recipe)
+storage.utils.serialize_recipe = function(recipe)
     local function serialize_number(num)
         if num == math.huge then
             return "inf"
@@ -627,7 +627,7 @@ global.utils.serialize_recipe = function(recipe)
     }
 end
 
-global.utils.serialize_entity = function(entity)
+storage.utils.serialize_entity = function(entity)
 
     if entity == nil then
         return {}
@@ -660,14 +660,14 @@ global.utils.serialize_entity = function(entity)
         health = entity.health,
         energy = entity.energy,
         type = "\""..entity.type.."\"",
-        status = global.utils.entity_status_names(entity.status)
+        status = storage.utils.entity_status_names(entity.status)
     }
 
     if entity.grid then
         serialized.grid = serialize_equipment_grid(entity.grid)
     end
     --game.print(serpent.line(entity.get_inventory(defines.inventory.turret_ammo)))
-    serialized.warnings = global.utils.get_issues(entity)
+    serialized.warnings = storage.utils.get_issues(entity)
 
     local inventory_types = {
         {name = "fuel", define = defines.inventory.fuel},
@@ -687,12 +687,12 @@ global.utils.serialize_entity = function(entity)
     for _, inv_type in ipairs(inventory_types) do
         local inventory = entity.get_inventory(inv_type.define)
         if inventory then
-            serialized[inv_type.name] = inventory.get_contents()
+            serialized[inv_type.name] = storage.utils.get_contents_compat(inventory)
         end
     end
 
     -- Add dimensions of the entity
-    local prototype = game.entity_prototypes[entity.name]
+    local prototype = prototypes.entity[entity.name]
     local collision_box = prototype.collision_box
     serialized.dimensions = {
         width = math.abs(collision_box.right_bottom.x - collision_box.left_top.x),
@@ -763,8 +763,8 @@ global.utils.serialize_entity = function(entity)
 
         -- Get and merge contents from both lines
         serialized.inventory = {}
-        local line1_contents = line1.get_contents()
-        local line2_contents = line2.get_contents()
+        local line1_contents = storage.utils.get_contents_compat(line1)
+        local line2_contents = storage.utils.get_contents_compat(line2)
 
         -- Set terminus and source flags based on connections
         serialized.is_terminus = #entity.belt_neighbours["outputs"] == 0
@@ -873,8 +873,8 @@ global.utils.serialize_entity = function(entity)
 
         -- Get the contents of both output lines
         serialized.inventory = {
-            entity.get_transport_line(1).get_contents(),
-            entity.get_transport_line(2).get_contents()
+            storage.utils.get_contents_compat(entity.get_transport_line(1)),
+            storage.utils.get_contents_compat(entity.get_transport_line(2))
         }
     end
 
@@ -956,8 +956,8 @@ global.utils.serialize_entity = function(entity)
 
     -- Add the current research to the lab
     if entity.name == "lab" then
-        if global.agent_characters[1].force.current_research ~= nil then
-            serialized.research = global.agent_characters[1].force.current_research.name
+        if storage.agent_characters[1].force.current_research ~= nil then
+            serialized.research = storage.agent_characters[1].force.current_research.name
         else
             serialized.research = nil
         end
@@ -978,7 +978,7 @@ global.utils.serialize_entity = function(entity)
         serialized.output_connection_points = {}
 
         local recipe = entity.get_recipe()
-        local mappings = global.utils.get_refinery_fluid_mappings(entity, recipe)
+        local mappings = storage.utils.get_refinery_fluid_mappings(entity, recipe)
         if mappings then
             serialized.input_connection_points = mappings.inputs
             serialized.output_connection_points = mappings.outputs
@@ -991,7 +991,7 @@ global.utils.serialize_entity = function(entity)
         serialized.output_connection_points = {}
 
         local recipe = entity.get_recipe()
-        local mappings = global.utils.get_chemical_plant_fluid_mappings(entity, recipe)
+        local mappings = storage.utils.get_chemical_plant_fluid_mappings(entity, recipe)
         if mappings then
             serialized.input_connection_points = mappings.inputs
             serialized.output_connection_points = mappings.outputs
@@ -1020,7 +1020,7 @@ global.utils.serialize_entity = function(entity)
 
     if entity.type == "storage-tank" then
         -- Get and filter connection points
-        local connection_points = global.utils.get_storage_tank_connection_points(entity)
+        local connection_points = storage.utils.get_storage_tank_connection_points(entity)
         local filtered_points = {}
 
         -- Filter out invalid connection points (e.g., those in water)
@@ -1104,7 +1104,7 @@ global.utils.serialize_entity = function(entity)
         -- game.print("Mining drill drop position: " .. serpent.line(serialized.drop_position))
 
         -- Get the mining area
-        local prototype = game.entity_prototypes[entity.name]
+        local prototype = prototypes.entity[entity.name]
         local mining_area = 1
         if prototype.mining_drill_radius then
             mining_area = prototype.mining_drill_radius * 2
@@ -1163,7 +1163,7 @@ global.utils.serialize_entity = function(entity)
     -- Add recipes if the entity is a crafting machine
     if entity.type == "assembling-machine" or entity.type == "furnace" then
         if entity.get_recipe() then
-            serialized.recipe = global.utils.serialize_recipe(entity.get_recipe())
+            serialized.recipe = storage.utils.serialize_recipe(entity.get_recipe())
         end
     end
 
@@ -1219,7 +1219,7 @@ global.utils.serialize_entity = function(entity)
         -- Serialize the component inventories
         for name, inventory in pairs(rocket_inventory) do
             if inventory and not inventory.is_empty() then
-                serialized[name .. "_inventory"] = inventory.get_contents()
+                serialized[name .. "_inventory"] = storage.utils.get_contents_compat(inventory)
             end
         end
 
@@ -1259,13 +1259,13 @@ global.utils.serialize_entity = function(entity)
     end
 
     if entity.type == "generator" then
-        serialized.connection_points = global.utils.get_generator_connection_positions(entity)
+        serialized.connection_points = storage.utils.get_generator_connection_positions(entity)
         serialized.energy_generated_last_tick = entity.energy_generated_last_tick
         --serialized.power_production = entity.power_production
     end
 
     if entity.name == "pumpjack" then
-        serialized.connection_points = global.utils.get_pumpjack_connection_points(entity)
+        serialized.connection_points = storage.utils.get_pumpjack_connection_points(entity)
     end
 
     -- Add fuel and input ingredients if the entity is a furnace or burner
@@ -1288,7 +1288,7 @@ global.utils.serialize_entity = function(entity)
 
     -- Add fluid box if the entity is an offshore pump
     if entity.type == "offshore-pump" then
-        serialized.connection_points = global.utils.get_offshore_pump_connection_points(entity)
+        serialized.connection_points = storage.utils.get_offshore_pump_connection_points(entity)
     end
 
     -- If entity has a fluidbox
