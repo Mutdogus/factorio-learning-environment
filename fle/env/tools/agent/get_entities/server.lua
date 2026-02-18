@@ -8,21 +8,16 @@ storage.actions.get_entities = function(player_index, radius, entity_names_json,
     end
 
     radius = tonumber(radius) or 5
-    local entity_names = helpers.json_to_table(entity_names_json) or {}
+    local entity_names = entity_names_json and helpers.json_to_table(entity_names_json) or {}
     local area = {
         {position.x - radius, position.y - radius},
         {position.x + radius, position.y + radius}
     }
 
-    local filter = {}
-    if entity_names and #entity_names > 0 then
-        filter = {name = entity_names}
-    end
-
     local entities
 
     if #entity_names > 0 then
-        entities = player.surface.find_entities_filtered{area = area, force = player.force, filter=filter}
+        entities = player.surface.find_entities_filtered{area = area, force = player.force, name = entity_names}
     else
         entities = player.surface.find_entities_filtered{area = area, force = player.force}
     end
