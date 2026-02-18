@@ -1636,6 +1636,9 @@ end
 storage.actions.connect_entities = function(player_index, source_x, source_y, target_x, target_y, path_handle, connection_type_string, dry_run, number_of_connection_entities)
 
     local connection_types = {}
+    if not connection_type_string then
+        error("\"connection_type_string is required (e.g. 'transport-belt' or 'inserter,transport-belt')\"")
+    end
     for item in string.gmatch(connection_type_string, "([^,]+)") do
         -- game.print(item)
         table.insert(connection_types, item)
