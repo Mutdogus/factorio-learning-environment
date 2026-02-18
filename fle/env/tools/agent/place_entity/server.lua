@@ -42,7 +42,7 @@ local function find_offshore_pump_position(player, center_pos)
                     -- Check if position is already occupied
                     local entities = player.surface.find_entities_filtered{
                         position = check_pos,
-                        collision_mask = "player-layer", 
+                        collision_mask = {layers = {player = true}},
                         invert = false
                     }
 
@@ -59,7 +59,7 @@ local function find_offshore_pump_position(player, center_pos)
                                 -- Check for entities at water position
                                 local water_entities = player.surface.find_entities_filtered{
                                     position = water_pos,
-                                    collision_mask = "water-tile",
+                                    collision_mask = {layers = {water_tile = true}},
                                     invert = true
                                 }
 
@@ -80,7 +80,7 @@ local function find_offshore_pump_position(player, center_pos)
                                             local final_check = player.surface.find_entities_filtered{
                                                 area = {{check_pos.x - 0.5, check_pos.y - 0.5},
                                                        {check_pos.x + 0.5, check_pos.y + 0.5}},
-                                                collision_mask = "player-layer"
+                                                collision_mask = {layers = {player = true}}
                                             }
 
                                             if #final_check == 0 then

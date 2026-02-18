@@ -23,7 +23,7 @@ storage.actions.nearest_buildable = function(player_index, entity_name, bounding
                     {chunk_x * 32, chunk_y * 32},
                     {(chunk_x + 1) * 32, (chunk_y + 1) * 32}
                 },
-                collision_mask = "resource-layer"
+                collision_mask = {layers = {resource = true}}
             }
         end
         return chunk_cache[cache_key]
@@ -42,7 +42,7 @@ storage.actions.nearest_buildable = function(player_index, entity_name, bounding
         -- Quick initial resource count check
         local total_resources = surface.count_entities_filtered{
             area = {left_top, right_bottom},
-            collision_mask = "resource-layer"
+            collision_mask = {layers = {resource = true}}
         }
 
         -- Calculate required coverage
@@ -107,14 +107,14 @@ storage.actions.nearest_buildable = function(player_index, entity_name, bounding
         -- Quick collision checks first
         if surface.count_tiles_filtered{
             area = {left_top, right_bottom},
-            collision_mask = "water-tile"
+            collision_mask = {layers = {water_tile = true}}
         } > 0 then
             return false
         end
 
         if surface.count_entities_filtered{
             area = {left_top, right_bottom},
-            collision_mask = "object-layer"
+            collision_mask = {layers = {object = true}}
         } > 0 then
             return false
         end
@@ -160,7 +160,7 @@ storage.actions.nearest_buildable = function(player_index, entity_name, bounding
                 if surface.count_entities_filtered{
                     area = {{current_pos.x, current_pos.y},
                            {current_pos.x + 1, current_pos.y + 1}},
-                    collision_mask = needs_resources and "resource-layer" or "object-layer"
+                    collision_mask = needs_resources and {layers = {resource = true}} or {layers = {object = true}}
                 } == (needs_resources and 1 or 0) then
                     return current_pos
                 end

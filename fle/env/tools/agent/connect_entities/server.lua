@@ -315,7 +315,7 @@ local function is_placeable(position)
 
     local entities = game.surfaces[1].find_entities_filtered{
         position = position,
-        collision_mask = "player-layer"
+        collision_mask = {layers = {player = true}}
     }
     if #entities == 1 then
         if entities[1].name == "character" then

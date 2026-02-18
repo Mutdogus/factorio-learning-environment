@@ -7,10 +7,10 @@ local function is_transport_belt_blocked(entity)
         local line_2 = entity.get_transport_line(2)
 
         local direction_vector = {
-            [0] = {x = 0, y = -1},  -- North
-            [2] = {x = 1, y = 0},   -- East
-            [4] = {x = 0, y = 1},   -- South
-            [6] = {x = -1, y = 0},  -- West
+            [0] = {x = 0, y = -1},   -- North (defines.direction.north = 0)
+            [4] = {x = 1, y = 0},    -- East  (defines.direction.east = 4)
+            [8] = {x = 0, y = 1},    -- South (defines.direction.south = 8)
+            [12] = {x = -1, y = 0},  -- West  (defines.direction.west = 12)
         }
 
         local dx = direction_vector[entity.direction].x

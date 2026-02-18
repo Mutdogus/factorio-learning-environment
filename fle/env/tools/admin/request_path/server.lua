@@ -41,14 +41,15 @@ storage.actions.request_path = function(player_index, start_x, start_y, goal_x, 
 
     local path_request = {
         bounding_box = {{-size, -size}, {size, size}},
-        collision_mask = { 
-            "player-layer",
-            "train-layer",
-            "consider-tile-transitions",
-            "water-tile",
-            "object-layer",
-            "transport-belt-layer",
-            "water-tile"
+        collision_mask = {
+            layers = {
+                player = true,
+                train = true,
+                water_tile = true,
+                object = true,
+                transport_belt = true
+            },
+            consider_tile_transitions = true
         },
         start = start_position,
         goal = goal_position,
