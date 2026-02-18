@@ -636,7 +636,12 @@ storage.utils.serialize_entity = function(entity)
     local direction = entity.direction
 
     if direction ~= nil then
-        direction = get_entity_direction(entity.name, entity.direction)
+        -- In Factorio 2.0, entity.direction values are 0,4,8,12 (doubled from 1.x).
+        -- get_entity_direction expects 0-3 input, and returns defines.direction values (0,4,8,12 in 2.0).
+        -- Python Direction enum uses 0,2,4,6 (matching 1.x values).
+        -- So: entity.direction/4 → 0-3 input, get_entity_direction output/2 → Python values.
+        local internal_dir = entity.direction / 4
+        direction = get_entity_direction(entity.name, internal_dir) / 2
     else
         direction = 0
     end
