@@ -101,12 +101,38 @@ function math.round(x)
 end
 
 local function has_valid_fluidbox(entity)
-    return entity.fluidbox and #entity.fluidbox > 0 and entity.fluidbox[1] and entity.fluidbox[1].get_fluid_system_id
+    return entity.fluidbox and #entity.fluidbox > 0
 end
 
+-- Factorio 2.0: get_fluid_system_id was removed. Use BFS via get_connections to check connectivity.
 local function are_fluidboxes_connected(entity1, entity2)
-    if has_valid_fluidbox(entity1) and has_valid_fluidbox(entity2) then
-        return entity1.fluidbox[1].get_fluid_system_id() == entity2.fluidbox[1].get_fluid_system_id()
+    if not has_valid_fluidbox(entity1) or not has_valid_fluidbox(entity2) then
+        return false
+    end
+    local visited = {}
+    local queue = {entity1}
+    visited[entity1.unit_number] = true
+    local idx = 1
+    while idx <= #queue do
+        local current = queue[idx]
+        idx = idx + 1
+        for i = 1, #current.fluidbox do
+            local conns = current.fluidbox.get_connections(i)
+            if conns then
+                for _, conn in pairs(conns) do
+                    local owner = conn.owner
+                    if owner and owner.valid then
+                        if owner.unit_number == entity2.unit_number then
+                            return true
+                        end
+                        if not visited[owner.unit_number] then
+                            visited[owner.unit_number] = true
+                            table.insert(queue, owner)
+                        end
+                    end
+                end
+            end
+        end
     end
     return false
 end
@@ -1316,7 +1342,7 @@ local function are_positions_pipe_connected(start_pos, end_pos, connection_type)
         return false
     end
     
-    -- Use fluid system ID for checking pipe connections
+    -- Use fluidbox connectivity for checking pipe connections
     if has_valid_fluidbox(start_pipe) then
         local end_pipe = nil
         for _, pipe_type in ipairs(pipe_types) do
@@ -1325,67 +1351,70 @@ local function are_positions_pipe_connected(start_pos, end_pos, connection_type)
                 break
             end
         end
-        
+
         if end_pipe and has_valid_fluidbox(end_pipe) then
-            return start_pipe.fluidbox[1].get_fluid_system_id() == end_pipe.fluidbox[1].get_fluid_system_id()
+            return are_fluidboxes_connected(start_pipe, end_pipe)
         end
     end
     
     return false
 end
 
--- Helper function to serialize pipe group from a starting pipe using improved BFS
+-- Helper function to serialize pipe group from a starting pipe using BFS via fluidbox connections
 local function serialize_pipe_group(entity)
     if not entity or not entity.valid or (entity.type ~= "pipe" and entity.type ~= "pipe-to-ground") then
         return nil
     end
-    
+
     if not has_valid_fluidbox(entity) then
         return nil
     end
-    
+
     local serialized = {}
     local visited = {}
     local queue = {entity}
     local max_search = 200
     local search_count = 0
-    local system_id = entity.fluidbox[1].get_fluid_system_id()
-    
+
     while #queue > 0 and search_count < max_search do
         search_count = search_count + 1
         local current_pipe = table.remove(queue, 1)
-        
+
         if not current_pipe or not current_pipe.valid then
             goto continue
         end
-        
+
         local pipe_id = current_pipe.unit_number
         if visited[pipe_id] then
             goto continue
         end
         visited[pipe_id] = true
-        
-        -- Serialize current pipe
-        table.insert(serialized, storage.utils.serialize_entity(current_pipe))
-        
-        -- Find all connected pipes in the same fluid system
-        local all_pipes = game.surfaces[1].find_entities_filtered{
-            position = current_pipe.position,
-            radius = 10,
-            type = {"pipe", "pipe-to-ground"}
-        }
-        
-        for _, pipe in pairs(all_pipes) do
-            if pipe.valid and has_valid_fluidbox(pipe) and not visited[pipe.unit_number] then
-                if pipe.fluidbox[1].get_fluid_system_id() == system_id then
-                    table.insert(queue, pipe)
+
+        -- Only serialize pipe/pipe-to-ground entities
+        if current_pipe.type == "pipe" or current_pipe.type == "pipe-to-ground" then
+            table.insert(serialized, storage.utils.serialize_entity(current_pipe))
+        end
+
+        -- Factorio 2.0: traverse connected entities via fluidbox.get_connections
+        if has_valid_fluidbox(current_pipe) then
+            for i = 1, #current_pipe.fluidbox do
+                local conns = current_pipe.fluidbox.get_connections(i)
+                if conns then
+                    for _, conn in pairs(conns) do
+                        local owner = conn.owner
+                        if owner and owner.valid and not visited[owner.unit_number] then
+                            if owner.type == "pipe" or owner.type == "pipe-to-ground" then
+                                table.insert(queue, owner)
+                            end
+                        end
+                    end
                 end
             end
         end
-        
+
         ::continue::
     end
-    
+
     return serialized
 end
 

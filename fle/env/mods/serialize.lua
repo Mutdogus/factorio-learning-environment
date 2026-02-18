@@ -235,6 +235,46 @@ recursive_serialize.deserialize_equipment_grid = function(grid, serialized)
     end
 end
 
+-- Factorio 2.0: get_fluid_system_id was removed. Compute group IDs via BFS on fluidbox connections.
+local fluid_group_id_cache = {}
+
+local function get_fluid_group_id(entity)
+    if not entity or not entity.valid or not entity.fluidbox or #entity.fluidbox == 0 then
+        return nil
+    end
+    if fluid_group_id_cache[entity.unit_number] then
+        return fluid_group_id_cache[entity.unit_number]
+    end
+    local visited = {}
+    local queue = {entity}
+    local min_id = entity.unit_number
+    visited[entity.unit_number] = true
+    local idx = 1
+    while idx <= #queue do
+        local current = queue[idx]
+        idx = idx + 1
+        if current.unit_number < min_id then
+            min_id = current.unit_number
+        end
+        for i = 1, #current.fluidbox do
+            local conns = current.fluidbox.get_connections(i)
+            if conns then
+                for _, conn in pairs(conns) do
+                    local owner = conn.owner
+                    if owner and owner.valid and not visited[owner.unit_number] then
+                        visited[owner.unit_number] = true
+                        table.insert(queue, owner)
+                    end
+                end
+            end
+        end
+    end
+    for id, _ in pairs(visited) do
+        fluid_group_id_cache[id] = min_id
+    end
+    return min_id
+end
+
 local function serialize_fluidbox(fluidbox)
     local serialized = {
         length = #fluidbox,
@@ -250,18 +290,17 @@ local function serialize_fluidbox(fluidbox)
         local prototype = fluidbox.get_prototype(i)
         local connections = fluidbox.get_connections(i)
         local filter = fluidbox.get_filter(i)
-        local flow = fluidbox.get_flow(i)
         local locked_fluid = fluidbox.get_locked_fluid(i)
-        local fluid_system_id = fluidbox.get_fluid_system_id(i)
+        local fluid_group_id = fluidbox.owner and get_fluid_group_id(fluidbox.owner) or nil
 
         local serialized_box = {
             prototype = prototype and prototype.object_name or nil,
             capacity = fluidbox.get_capacity(i),
             connections = {},
             filter = filter,
-            flow = flow,
+            flow = 0,
             locked_fluid = locked_fluid,
-            fluid_system_id = fluid_system_id,
+            fluid_system_id = fluid_group_id,
         }
 
         -- Serialize fluid
@@ -921,34 +960,38 @@ storage.utils.serialize_entity = function(entity)
     if entity.type == "pipe" then
         serialized.connections = {}
         local fluid_name = nil
+        local contents_count = 0
         for _, connection in pairs(entity.fluidbox.get_pipe_connections(1)) do
             table.insert(serialized.connections, connection.position)
         end
-        local contents_count = 0
-        for name, count in pairs(entity.fluidbox.get_fluid_system_contents(1)) do
-            contents_count = contents_count + count
-            fluid_name = "\""..name.."\""
+        -- Factorio 2.0: use fluidbox[1] instead of removed get_fluid_system_contents
+        local fluid = entity.fluidbox[1]
+        if fluid then
+            contents_count = fluid.amount or 0
+            fluid_name = "\""..fluid.name.."\""
         end
         serialized.contents = contents_count
         serialized.fluid = fluid_name
-        serialized.fluidbox_id = entity.fluidbox.get_fluid_system_id(1)
-        serialized.flow_rate = entity.fluidbox.get_flow(1)
+        serialized.fluidbox_id = get_fluid_group_id(entity)
+        serialized.flow_rate = 0
     end
 
     -- Add input and output locations if the entity is a pipe-to-ground
     if entity.type == "pipe-to-ground" then
         serialized.connections = {}
         local fluid_name = nil
+        local contents_count = 0
         for _, connection in pairs(entity.fluidbox.get_pipe_connections(1)) do
             table.insert(serialized.connections, connection.position)
         end
-        local contents_count = 0
-        for name, count in pairs(entity.fluidbox.get_fluid_system_contents(1)) do
-            contents_count = contents_count + count
-            fluid_name = "\""..name.."\""
+        -- Factorio 2.0: use fluidbox[1] instead of removed get_fluid_system_contents
+        local fluid = entity.fluidbox[1]
+        if fluid then
+            contents_count = fluid.amount or 0
+            fluid_name = "\""..fluid.name.."\""
         end
-        serialized.fluidbox_id = entity.fluidbox.get_fluid_system_id(1)
-        serialized.flow_rate = entity.fluidbox.get_flow(1)
+        serialized.fluidbox_id = get_fluid_group_id(entity)
+        serialized.flow_rate = 0
         serialized.contents = contents_count
         serialized.fluid = fluid_name
         --serialized.input_position = entity.fluidbox.get_connections(1)[1].position
@@ -1048,7 +1091,7 @@ storage.utils.serialize_entity = function(entity)
                 serialized.fluid = string.format("\"%s\"", fluid.name)
                 serialized.fluid_amount = fluid.amount
                 serialized.fluid_temperature = fluid.temperature
-                serialized.fluid_system_id = entity.fluidbox.get_fluid_system_id(1)
+                serialized.fluid_system_id = get_fluid_group_id(entity)
             end
         end
 
@@ -1329,9 +1372,9 @@ storage.utils.serialize_entity = function(entity)
             local fluid_contents = nil
             for i = 1, #entity.fluidbox do
                 if entity.fluidbox[i] then
-                    local system_id = entity.fluidbox.get_fluid_system_id(i)
-                    if system_id then
-                        table.insert(fluid_systems, system_id)
+                    local group_id = get_fluid_group_id(entity)
+                    if group_id then
+                        table.insert(fluid_systems, group_id)
                     end
                     has_fluid = true
                     fluid_contents =  "\""..entity.fluidbox[i].name.."\""
@@ -1341,7 +1384,7 @@ storage.utils.serialize_entity = function(entity)
             serialized.fluid_systems = fluid_systems
 
             if not has_fluid then
-                serialized.status = "not_connected"
+                serialized.status = "\"not_connected\""
                 if not serialized.warnings then
                     serialized.warnings = {}
                 end
@@ -1349,7 +1392,6 @@ storage.utils.serialize_entity = function(entity)
             else
                 serialized.fluid = fluid_contents
             end
-            --serialized.fluidbox = serialize_fluidbox(entity.fluidbox)
         end
     end
 
