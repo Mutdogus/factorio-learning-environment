@@ -797,7 +797,7 @@ local function connect_entities(player_index, source_x, source_y, target_x, targ
         
         -- Calculate the direction from start to end.
         local dir = storage.utils.get_direction(start_position, end_position)
-        local entrance_dir = storage.utils.get_entity_direction(underground_type, dir / 2)
+        local entrance_dir = storage.utils.get_entity_direction(underground_type, dir / 4)
         
         -- Place the underground entrance at the start position.
         place_at_position(player, underground_type, start_position, entrance_dir,
@@ -806,9 +806,9 @@ local function connect_entities(player_index, source_x, source_y, target_x, targ
         local exit_dir
         if underground_type == "pipe-to-ground" then
           -- For pipe-to-ground, rotate the direction 180° for the exit.
-          exit_dir = storage.utils.get_entity_direction(underground_type, (dir / 2 + 2) % 4)
+          exit_dir = storage.utils.get_entity_direction(underground_type, (dir / 4 + 2) % 4)
         else
-          exit_dir = storage.utils.get_entity_direction(underground_type, dir / 2)
+          exit_dir = storage.utils.get_entity_direction(underground_type, dir / 4)
         end
         
         -- Place the underground exit at the end position.
@@ -851,7 +851,7 @@ local function connect_entities(player_index, source_x, source_y, target_x, targ
                 local next_pos = path[current_index + 1].position
                 local dir = storage.utils.get_direction(current_pos, next_pos)
                 place_at_position(player, default_connection_type, current_pos,
-                        storage.utils.get_entity_direction(default_connection_type, dir/2),
+                        storage.utils.get_entity_direction(default_connection_type, dir/4),
                         serialized_entities, dry_run, counter_state, false)
                 current_index = current_index + 1
                 if current_index > MAX_INDEX_PLACEMENT then
@@ -864,7 +864,7 @@ local function connect_entities(player_index, source_x, source_y, target_x, targ
             local margin_next_pos = path[section.start_index + 1].position
             local margin_dir = storage.utils.get_direction(margin_pos, margin_next_pos)
             place_at_position(player, default_connection_type, margin_pos,
-                    storage.utils.get_entity_direction(default_connection_type, margin_dir/2),
+                    storage.utils.get_entity_direction(default_connection_type, margin_dir/4),
                     serialized_entities, dry_run, counter_state, false)
 
             -- Split the section into multiple underground segments, limited by remaining_sections
@@ -879,7 +879,7 @@ local function connect_entities(player_index, source_x, source_y, target_x, targ
                 local exit_pos = path[segment.exit_index].position
                 local dir = storage.utils.get_direction(entrance_pos, exit_pos)
 
-                local entity_dir = storage.utils.get_entity_direction(underground_type, dir/2)
+                local entity_dir = storage.utils.get_entity_direction(underground_type, dir/4)
 
                 place_at_position(player, underground_type, entrance_pos,
                         entity_dir,
@@ -887,7 +887,7 @@ local function connect_entities(player_index, source_x, source_y, target_x, targ
 
                 -- Adjust direction for pipe-to-ground exit and place exit pipe
                 if underground_type == 'pipe-to-ground' then
-                    entity_dir = storage.utils.get_entity_direction(underground_type, (dir/2 + 2)%4)
+                    entity_dir = storage.utils.get_entity_direction(underground_type, (dir/4 + 2)%4)
                 end
 
                 place_at_position(player, underground_type, exit_pos,
@@ -903,7 +903,7 @@ local function connect_entities(player_index, source_x, source_y, target_x, targ
                 local final_prev_pos = path[section.end_index - 1].position
                 local final_dir = storage.utils.get_direction(final_prev_pos, final_margin_pos)
                 place_at_position(player, default_connection_type, final_margin_pos,
-                        storage.utils.get_entity_direction(default_connection_type, final_dir/2),
+                        storage.utils.get_entity_direction(default_connection_type, final_dir/4),
                         serialized_entities, dry_run, counter_state, false)
             end
 
@@ -920,7 +920,7 @@ local function connect_entities(player_index, source_x, source_y, target_x, targ
             local next_pos = path[current_index + 1].position
             local dir = storage.utils.get_direction(current_pos, next_pos)
             place_at_position(player, default_connection_type, current_pos,
-                    storage.utils.get_entity_direction(default_connection_type, dir/2),
+                    storage.utils.get_entity_direction(default_connection_type, dir/4),
                     serialized_entities, dry_run, counter_state, false)
             current_index = current_index + 1
         end
@@ -931,7 +931,7 @@ local function connect_entities(player_index, source_x, source_y, target_x, targ
             local prev_pos = path[#path-1].position
             local dir = storage.utils.get_direction(prev_pos, final_pos)
             place_at_position(player, default_connection_type, final_pos,
-                    storage.utils.get_entity_direction(default_connection_type, dir/2),
+                    storage.utils.get_entity_direction(default_connection_type, dir/4),
                     serialized_entities, dry_run, counter_state, false)
         end
     else
@@ -965,7 +965,7 @@ local function connect_entities(player_index, source_x, source_y, target_x, targ
             for i = 1, #path, step_size do
                 local current_pos = path[i].position
                 local dir = storage.utils.get_direction(current_pos, path[math.min(i + step_size, #path)].position)
-                local entity_dir = storage.utils.get_entity_direction(default_connection_type, dir/2)
+                local entity_dir = storage.utils.get_entity_direction(default_connection_type, dir/4)
 
                 -- Place the pole
                 local placed_entity = place_at_position(player, default_connection_type, current_pos, entity_dir, serialized_entities, dry_run, counter_state)
@@ -988,7 +988,7 @@ local function connect_entities(player_index, source_x, source_y, target_x, targ
                 local final_dir = storage.utils.get_direction(path[#path].position, end_position)
                 -- game.print("Placing final pole at "..serpent.line(end_position))
                 place_at_position(player, default_connection_type, end_position,
-                        storage.utils.get_entity_direction(default_connection_type, final_dir/2),
+                        storage.utils.get_entity_direction(default_connection_type, final_dir/4),
                         serialized_entities, dry_run, counter_state)
             end
         else
@@ -999,7 +999,7 @@ local function connect_entities(player_index, source_x, source_y, target_x, targ
             for i = 1, #path-1, step_size do
                 local dir = storage.utils.get_direction(path[i].position, path[math.min(i + step_size, #path)].position)
                 local placed = place_at_position(player, default_connection_type, path[i].position,
-                        storage.utils.get_entity_direction(default_connection_type, dir/2),
+                        storage.utils.get_entity_direction(default_connection_type, dir/4),
                         serialized_entities, dry_run, counter_state)
                 if placed then
                     last_placed_entity = placed
@@ -1034,7 +1034,7 @@ local function connect_entities(player_index, source_x, source_y, target_x, targ
                 )
 
                 local final_entity = place_at_position(player, default_connection_type, end_position,
-                        storage.utils.get_entity_direction(default_connection_type, final_dir/2),
+                        storage.utils.get_entity_direction(default_connection_type, final_dir/4),
                         serialized_entities, dry_run, counter_state)
                         
 
