@@ -600,6 +600,7 @@ class Accumulator(StaticEntity, Electric):
     """Represents an energy storage device"""
 
     energy_source: Optional[EnergySource] = None
+    connection_points: List[Position] = []
     _height: float = 2
     _width: float = 2
 
@@ -679,6 +680,7 @@ class AssemblingMachine(StaticEntity, Electric):
     assembling_machine_input: Inventory = Inventory()
     assembling_machine_output: Inventory = Inventory()
     assembling_machine_modules: Inventory = Inventory()
+    connection_points: List[Position] = []
     _height: float = 3
     _width: float = 3
 
@@ -802,6 +804,7 @@ class ElectricityPole(Entity, Electric):
     """A power pole for electricity distribution."""
 
     flow_rate: float
+    connection_points: List[Position] = []
     _height: float = 1
     _width: float = 1
 
@@ -823,6 +826,7 @@ class ElectricFurnace(Entity, Electric):
 
     furnace_source: Inventory = Inventory()
     furnace_result: Inventory = Inventory()
+    connection_points: List[Position] = []
     _height: float = 3
     _width: float = 3
 
@@ -851,6 +855,7 @@ class RocketSilo(StaticEntity, Electric):
     rocket_inventory: Inventory = Inventory()  # Holds satellite or other payload
     rocket_progress: float = 0.0  # Progress of current rocket construction (0-100)
     launch_count: int = 0  # Number of successful launches
+    connection_points: List[Position] = []
     _width: float = 9
     _height: float = 9
 
@@ -879,6 +884,7 @@ class Lab(Entity, Electric):
     lab_input: Inventory = Inventory()
     lab_modules: Inventory = Inventory()
     research: Optional[Any] = None  # Technology
+    connection_points: List[Position] = []
     _height: float = 3
     _width: float = 3
 
